@@ -25,7 +25,7 @@ instance =dht11.DHT11(pin=13)
 buzzer = 15
 GPIO.setup(buzzer,GPIO.OUT)
 
-state = 0
+global state
 godzina = [6,6,6,6]
 
 def budzik():
@@ -38,6 +38,7 @@ def budzik():
     keypad = Keypad.Keypad(keys,rowsPins,colsPins,ROWS,COLS)    #creat Keypad object
     keypad.setDebounceTime(50)      #set the debounce time
     flag = 0
+    global state
     while(True):
         key = keypad.getKey()
         if(key!= keypad.NULL):
@@ -46,14 +47,19 @@ def budzik():
                 display.lcd_display_stringg(key,1,3+flag%4)
                 flag = flag+1
             elif(key == '#'):
-                break
+                return 0
             elif(key == '*'):
                 if(int(godzina[0]) > 2 or int(godzina[2]) > 5):
                     display.lcd_display_string("Zla godzina",1)
                     print(godzina[0],godzina[1],godzina[2],godzina[3])
                     time.sleep(2)
+                elif (int(godzina[0]) == 2 and int(godzina[1]) > 3):
+                    display.lcd_display_string("Zla godzina",1)
+                    print(godzina[0],godzina[1],godzina[2],godzina[3])
+                    time.sleep(2)
                 else:
                     state = 1
+                    return 0
                 break
             else:
                 continue
@@ -69,6 +75,7 @@ def buzz():
 
 if __name__ == '__main__':
     print("startuje")
+    state = 0
     display.lcd_display_string("Witam konsumenta",1)
     try:
         GPIO.output(buzzer,GPIO.LOW)
@@ -78,15 +85,30 @@ if __name__ == '__main__':
         t.start() 
         while(True):
             if  (state == 1):
-                H = int(godzina[0] + godzina[1])
-                M = int(godzina[2] + godzina[3])
+                dt = datetime.datetime.now()
+                H = str(godzina[0] + godzina[1])
+                M = str(godzina[2] + godzina[3])
                 h = dt.strftime("%H")
                 m = dt.strftime("%M")
-                print(H,M,h,m)
                 if(H == h and M == m):
                     print("ALARM")
-                else:
-                    continue
+                    t.kill()
+                    key = 'alarm'
+                    t = Thrd(idd=key,sleep_interval=3)
+                    t.start()
+                    while(True):
+                        key = keypad.getKey()
+                        if(key != keypad.NULL):
+                            if(key == '#'):
+                                t.kill()
+                                break
+                    display.lcd_clear()
+                    time.sleep(1)
+                    t = Thrd(idd=10,sleep_interval=100)
+                    t.start()
+                    print("ALARM")
+                    state = 0
+                    godzina = [9,9,9,9]
             key =  keypad.getKey()
             if(key != keypad.NULL):
                 if(key == 'A'):
@@ -99,8 +121,11 @@ if __name__ == '__main__':
                     t.start() 
                 elif(key == 'C'):
                     t.kill()
-                    t = Thrd(idd=key,sleep_interval=0.1)
-                    t.start() 
+                    budzik()
+                    t = Thrd(idd=10,sleep_interval=100)
+                    print(state)
+                    print(godzina)
+                    t.start()
                 elif(key == 'D'):
                     t.kill()
                     t = Thrd(idd=key,sleep_interval=100)

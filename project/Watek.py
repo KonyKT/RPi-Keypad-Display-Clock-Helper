@@ -12,16 +12,18 @@ import requests
 
 # Load the driver and set it to "display"
 # If you use something from the driver library use the "display." prefix first
-
+GPIO.setmode(GPIO.BOARD)
+buzzer = 15
+GPIO.setup(buzzer,GPIO.OUT)
 display = lcddriver.lcd()
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BOARD)
 instance = dht11.DHT11(pin=13)
 units = 'metric'
 cityid = '3099434'
-key = '****'
+key = '08af92036b1f1a81bf5e4cb408e95114'
 bruh = \
-    'https://newsapi.org/v2/top-headlines?country=us&apiKey=***'
+    'https://newsapi.org/v2/top-headlines?country=us&apiKey=6cd25e0aee6543bca05f97177548320a'
 spacer = ' ' * 16
 
 
@@ -44,6 +46,16 @@ class Thrd(threading.Thread):
                 is_killed = self._kill.wait(self._interval)
                 if is_killed:
                     break
+        if self._id == 'alarm':
+            display.lcd_clear()
+            display.lcd_display_string("BUDZIK DZIALA",1)
+            while True:
+                    GPIO.output(buzzer,GPIO.HIGH)
+                    time.sleep(1)
+                    GPIO.output(buzzer,GPIO.LOW)
+                    is_killed = self._kill.wait(self._interval)
+                    if is_killed:
+                        break
         if self._id == 'A':
             H = 24
             M = 61
@@ -81,33 +93,8 @@ class Thrd(threading.Thread):
                 is_killed = self._kill.wait(self._interval)
                 if is_killed:
                     break
-        if self._id == 'C':
-            display.lcd_clear()
-            display.lcd_display_string('Ladowanie danych', 1)
-            url = requests.get(bruh)
-            news = json.loads(url.text)
-            wiadomosci = [
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                ]
-            for i in range(0, 6):
-                wiadomosci[i] = news['articles'][i]['title']
-            for i in range(0, 6):
-                text = spacer + wiadomosci[i]
-                for j in range(0, len(text), 4):
-                    lcd_text = text[j:j + 16]
-                    display.lcd_display_string(lcd_text, 1)
-                    time.sleep(0.1)
-                    display.lcd_display_string(spacer, 1)
-                    is_killed = self._kill.wait(self._interval)
-                    if is_killed:
-                        display.lcd_clear()
-                        break
-            self.kill()
+
+
         if self._id == 'D':
             display.lcd_clear()
             display.lcd_display_string('Ladowanie danych', 1)
@@ -138,4 +125,4 @@ class Thrd(threading.Thread):
 
 
 
-            
+			
